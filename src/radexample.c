@@ -48,6 +48,8 @@ int main (void)
         char		user[total_number][100];
         char		pass[total_number][100];
         char		number[100];
+        
+        service = PW_AUTHENTICATE_ONLY;
 
 	/* Not needed if you already used openlog() */
 	rc_openlog("my-prog-name");
@@ -67,9 +69,10 @@ int main (void)
 	get_time();
 
         for (i=0; i<total_number; i = i + 1) {
-
+                /*
 		strcpy(username, user[i]);
 		strcpy(passwd, pass[i]);
+                 */
 
 		send = NULL;
         	received = NULL;
@@ -77,43 +80,46 @@ int main (void)
 		/*
 		 * Fill in User-Name
 		 */
-		if (rc_avpair_add(rh, &send, PW_USER_NAME, username, -1, 0) == NULL)
+		if (rc_avpair_add(rh, &send, PW_USER_NAME, user[i], -1, 0) == NULL)
 			return ERROR_RC;
 
 		/*
 		 * Fill in User-Password
 		 */
-		if (rc_avpair_add(rh, &send, PW_USER_PASSWORD, passwd, -1, 0) == NULL)
+		if (rc_avpair_add(rh, &send, PW_USER_PASSWORD, pass[i], -1, 0) == NULL)
 			return ERROR_RC;
 
 		/*
 		 * Fill in Service-Type
 		 */
-		service = PW_AUTHENTICATE_ONLY;
 		if (rc_avpair_add(rh, &send, PW_SERVICE_TYPE, &service, -1, 0) == NULL)
 			return ERROR_RC;
 
 		result = rc_auth(rh, 0, send, &received, NULL);
 
 		if (result == OK_RC) {
+                        /*
 			VALUE_PAIR *vp = received;
 			char name[128];
 			char value[128];
 
 			fprintf(stderr, "\"%s\" RADIUS Authentication OK\n", username);
+                         */
 			count = count + 1;
 			/* print the known attributes in the reply */
+                        /*
 			while(vp != NULL) {
 				if (rc_avpair_tostr(rh, vp, name, sizeof(name), value, sizeof(value)) == 0) {
 					fprintf(stderr, "%s:\t%s\n", name, value);
 				}
 				vp = vp->next;
 			}
+                         */
 		} else {
 			fprintf(stderr, "\"%s\" RADIUS Authentication failure (RC=%i)\n", username, result);
 		}
 	}
 	printf("end\n");
 	get_time();
-	printf("%d",count);
+	printf("%d\n",count);
 }
