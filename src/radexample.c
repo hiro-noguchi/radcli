@@ -8,6 +8,7 @@
 
 #include	<config.h>
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<string.h>
 #include	<radcli/radcli.h>
 
@@ -28,10 +29,10 @@ int get_time() {
 		tm.tm_min,
 		tm.tm_sec,
 		ts.tv_nsec);
-	return(0);
+	return(ts.tv_sec);
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
 	int             result;
 	char		username[128];
@@ -49,8 +50,14 @@ int main (void)
         char		pass[total_number][100];
         char		number[100];
         
+        int		before_time;
+	int		after_time;
+	int		count_sec = 0;
+	int		set_sec = 0;
+        
+        set_sec = atoi(argv[1]);
         service = PW_AUTHENTICATE_ONLY;
-
+        
 	/* Not needed if you already used openlog() */
 	rc_openlog("my-prog-name");
 
@@ -66,60 +73,66 @@ int main (void)
 	}
 
 	printf("start\n");
-	get_time();
+	before_time = get_time();
+        
+        while (count_sec < set_sec){
 
-        for (i=0; i<total_number; i = i + 1) {
-                /*
-		strcpy(username, user[i]);
-		strcpy(passwd, pass[i]);
-                 */
+        	for (i=0; i<total_number; i = i + 1) {
+                	/*
+			strcpy(username, user[i]);
+			strcpy(passwd, pass[i]);
+	                 */
 
-		send = NULL;
-        	received = NULL;
+			send = NULL;
+        		received = NULL;
 
-		/*
-		 * Fill in User-Name
-		 */
-		if (rc_avpair_add(rh, &send, PW_USER_NAME, user[i], -1, 0) == NULL)
-			return ERROR_RC;
+			/*
+			 * Fill in User-Name
+			 */
+			if (rc_avpair_add(rh, &send, PW_USER_NAME, user[i], -1, 0) == NULL)
+				return ERROR_RC;
 
-		/*
-		 * Fill in User-Password
-		 */
-		if (rc_avpair_add(rh, &send, PW_USER_PASSWORD, pass[i], -1, 0) == NULL)
-			return ERROR_RC;
+			/*
+			 * Fill in User-Password
+			 */
+			if (rc_avpair_add(rh, &send, PW_USER_PASSWORD, pass[i], -1, 0) == NULL)
+				return ERROR_RC;
 
-		/*
-		 * Fill in Service-Type
-		 */
-		if (rc_avpair_add(rh, &send, PW_SERVICE_TYPE, &service, -1, 0) == NULL)
-			return ERROR_RC;
+			/*
+			 * Fill in Service-Type
+			 */
+			if (rc_avpair_add(rh, &send, PW_SERVICE_TYPE, &service, -1, 0) == NULL)
+				return ERROR_RC;
 
-		result = rc_auth(rh, 0, send, &received, NULL);
+			result = rc_auth(rh, 0, send, &received, NULL);
 
-		if (result == OK_RC) {
-                        /*
-			VALUE_PAIR *vp = received;
-			char name[128];
-			char value[128];
+			if (result == OK_RC) {
+                	        /*
+				VALUE_PAIR *vp = received;
+				char name[128];
+				char value[128];
 
-			fprintf(stderr, "\"%s\" RADIUS Authentication OK\n", username);
-                         */
-			count = count + 1;
-			/* print the known attributes in the reply */
-                        /*
-			while(vp != NULL) {
-				if (rc_avpair_tostr(rh, vp, name, sizeof(name), value, sizeof(value)) == 0) {
-					fprintf(stderr, "%s:\t%s\n", name, value);
+				fprintf(stderr, "\"%s\" RADIUS Authentication OK\n", username);
+	                         */
+				count = count + 1;
+				/* print the known attributes in the reply */
+	                        /*
+				while(vp != NULL) {
+					if (rc_avpair_tostr(rh, vp, name, sizeof(name), value, sizeof(value)) == 0) {
+						fprintf(stderr, "%s:\t%s\n", name, value);
+					}
+					vp = vp->next;
 				}
-				vp = vp->next;
+                     	    	 */
+			} else {
+				fprintf(stderr, "\"%s\" RADIUS Authentication failure (RC=%i)\n", username, result);
 			}
-                         */
-		} else {
-			fprintf(stderr, "\"%s\" RADIUS Authentication failure (RC=%i)\n", username, result);
 		}
+		after_time = get_time();
+		count_sec = after_time - before_time;
 	}
 	printf("end\n");
-	get_time();
-	printf("%d\n",count);
+	printf("sec:%d\n",count_sec);
+        printf("tps:%d\n",count/count_sec);
+	printf("success:%d\n",count);
 }
